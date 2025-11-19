@@ -10,7 +10,7 @@ import (
 
 func main() {
 	if err := godotenv.Load(); err != nil {
-		panic("Error loading .env file")
+   		fmt.Println("No .env file found, using system environment")
 	}
 
 	db, err := repositories.Connect()
