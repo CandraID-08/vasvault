@@ -76,6 +76,7 @@ func (h *FileHandler) ListMyFiles(c *gin.Context) {
 	uid, ok := c.Get("userID")
 	if !ok {
 		utils.RespondJSON(c, http.StatusUnauthorized, nil, "user not found in context")
+		return
 	}
 
 	userID, ok := uid.(uint)
@@ -87,8 +88,21 @@ func (h *FileHandler) ListMyFiles(c *gin.Context) {
 			return
 		}
 	}
+	
+	categoryIDParam := c.Query("categoryId")
+	var categoryID *uint
 
-	response, err := h.FileService.ListUserFiles(userID)
+	if categoryIDParam != "" {
+		parseID, err := strconv.ParseUint(categoryIDParam, 10, 64)
+		if err != nil {
+			utils.RespondJSON(c, http.StatusBadRequest, nil, "invalid category id")
+			return
+		}
+		id := uint(parseID)
+		categoryID = &id
+	}
+
+	response, err := h.FileService.ListUserFilesWithOptionalCategory(userID, categoryID)
 	if err != nil {
 		utils.RespondJSON(c, http.StatusInternalServerError, nil, err.Error())
 		return

@@ -19,6 +19,7 @@ type FileServiceInterface interface {
 	UploadFile(userID uint, file multipart.File, header *multipart.FileHeader, request dto.UploadFileRequest) (*dto.FileResponse, error)
 	GetFileByID(fileID uint) (*dto.FileResponse, error)
 	ListUserFiles(userID uint) ([]dto.FileResponse, error)
+	ListUserFilesWithOptionalCategory(userID uint, categoryID *uint) ([]dto.FileResponse, error)
 	DeleteFile(fileID uint) error
 	AssignCategories(userID, fileID uint, categoryIDs []uint) error
 	RemoveCategories(userID, fileID uint, categoryIDs []uint) error
@@ -241,4 +242,37 @@ func (s *FileService) UpdateCategories(userID, fileID uint, categoryIDs []uint) 
 	}
 
 	return nil
+}
+
+func (s *FileService) ListUserFilesWithOptionalCategory(userID uint, categoryID *uint) ([]dto.FileResponse, error) {
+	files, err := s.repository.ListUserFilesWithOptionalCategory(userID, categoryID)
+	if err != nil {
+		return nil, err
+	}
+
+	var response []dto.FileResponse
+	for _, file := range files {
+		var categories []dto.CategorySimple
+		for _, cat := range file.Categories {
+			categories = append(categories, dto.CategorySimple{
+				ID:    cat.ID,
+				Name:  cat.Name,
+				Color: cat.Color,
+			})
+		}
+
+		response = append(response, dto.FileResponse{
+			ID:         file.ID,
+			UserId:     file.UserID,
+			FolderId:   file.WorkspaceID,
+			FileName:   file.Filename,
+			FilePath:   file.Filepath,
+			MimeType:   file.Mimetype,
+			Size:       file.Size,
+			Categories: categories,
+			CreatedAt:  file.UploadedAt,
+		})
+	}
+	
+	return response, nil
 }
